@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17191d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Slot Car Logbook">
+<title>Slot Car Logbook</title>
+<style>
+:root{color-scheme:dark;--bg:#111316;--panel:#1b1e23;--panel2:#242830;--line:#343943;--text:#f3f4f6;--muted:#a4abb6;--accent:#ef4444;--accent2:#c62828}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:22px 16px 16px;background:linear-gradient(135deg,#242830,#15171b);border-bottom:1px solid var(--line)}
+.wrap{max-width:920px;margin:auto}h1{font-size:1.5rem;margin:0 0 5px;letter-spacing:.2px}header p{margin:0;color:var(--muted);font-size:.92rem}
+main{max-width:920px;margin:auto;padding:16px;display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+h2{font-size:1.05rem;margin:0 0 14px}h3{font-size:.96rem;margin:0}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:135px;margin-bottom:12px}
+label{font-size:.82rem;color:var(--muted)}input,select,button{font:inherit}input,select{width:100%;background:#111317;border:1px solid #414752;color:var(--text);border-radius:10px;padding:11px 12px;min-height:44px}input:focus,select:focus{outline:2px solid #ef4444;outline-offset:1px}
+button{border:0;border-radius:10px;padding:11px 14px;min-height:42px;font-weight:650;cursor:pointer;background:var(--accent);color:white}button:hover{filter:brightness(1.08)}button.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}button.danger{background:#452326;color:#ffc6c6;border:1px solid #78343a}button.small{font-size:.82rem;padding:7px 10px;min-height:34px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{color:var(--muted)}.tiny{font-size:.78rem;color:var(--muted)}.hidden{display:none!important}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}
+.metric{background:var(--panel2);border-radius:12px;padding:11px}.metric strong{display:block;font-size:1.12rem}.metric span{font-size:.76rem;color:var(--muted)}
+.pass-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.trackbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:.88rem;white-space:nowrap}th,td{text-align:left;padding:10px 9px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600;font-size:.78rem}td:first-child,th:first-child{padding-left:0}
+.table-wrap{overflow-x:auto}.empty{padding:22px 8px;text-align:center;color:var(--muted)}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#292e36;border:1px solid #505763;border-radius:12px;padding:11px 16px;box-shadow:0 8px 30px #0008;z-index:10;max-width:90vw}
+footer{max-width:920px;margin:auto;padding:0 16px 26px;color:var(--muted);font-size:.78rem}
+@media(min-width:760px){main{grid-template-columns:1fr 1fr;align-items:start}#carsCard,#historyCard{grid-column:1/-1}.pass-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:420px){.card{padding:13px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.metric{padding:9px 7px}.metric strong{font-size:1rem}.pass-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>🏁 Slot Car Logbook</h1><p>Keep each car's passes organized by track.</p></div></header>
+<main>
+<section class="card" id="carsCard">
+ <div class="section-head"><h2>Cars & tracks</h2><button id="addCarBtn" class="secondary">＋ Add car</button></div>
+ <div class="row">
+  <div class="field"><label for="carSelect">Selected car</label><select id="carSelect"></select></div>
+  <div class="field"><label for="trackSelect">Track for this car</label><select id="trackSelect"></select></div>
+ </div>
+ <div class="row">
+  <div class="field" style="margin-bottom:0"><label for="newTrack">Add a track to selected car</label><input id="newTrack" placeholder="Track name" maxlength="60"></div>
+  <button id="addTrackBtn">Add track</button>
+ </div>
+ <div class="actions" style="margin-top:12px">
+  <button class="secondary small" id="renameCarBtn">Rename car</button>
+  <button class="secondary small" id="renameTrackBtn">Rename track</button>
+  <button class="danger small" id="deleteCarBtn">Delete car</button>
+  <button class="danger small" id="deleteTrackBtn">Delete track</button>
+ </div>
+ <p class="tiny">Each track belongs to one car. Passes are kept separately for every car/track combination.</p>
+</section>
+<section class="card" id="entryCard">
+ <h2 id="formTitle">Record a pass</h2>
+ <form id="passForm">
+  <div class="pass-grid">
+   <div class="field"><label for="v60">60 ft</label><input id="v60" inputmode="decimal" placeholder="e.g. 1.234"></div>
+   <div class="field"><label for="v1000">1000 ft</label><input id="v1000" inputmode="decimal" placeholder="e.g. 5.678"></div>
+   <div class="field"><label for="vmph">MPH</label><input id="vmph" inputmode="decimal" placeholder="e.g. 42.5"></div>
+   <div class="field"><label for="vstart">Start %</label><input id="vstart" inputmode="decimal" placeholder="e.g. 85"></div>
+   <div class="field"><label for="vfinish">Finish %</label><input id="vfinish" inputmode="decimal" placeholder="e.g. 92"></div>
+   <div class="field"><label for="vduration">Duration</label><input id="vduration" inputmode="decimal" placeholder="e.g. 6.250"></div>
+   <div class="field"><label for="vtemp">Temp</label><input id="vtemp" inputmode="decimal" placeholder="e.g. 74"></div>
+  </div>
+  <div class="actions"><button type="submit" id="savePassBtn">Save pass</button><button type="button" class="secondary hidden" id="cancelEditBtn">Cancel edit</button></div>
+ </form>
+ <p class="tiny">Only the seven measurements above are recorded for each pass. Date and time are added automatically.</p>
+</section>
+<section class="card" id="statsCard">
+ <h2>Selected track stats</h2>
+ <div class="metrics">
+  <div class="metric"><strong id="passCount">0</strong><span>Passes</span></div>
+  <div class="metric"><strong id="best60">—</strong><span>Best 60 ft</span></div>
+  <div class="metric"><strong id="best1000">—</strong><span>Best 1000 ft</span></div>
+  <div class="metric"><strong id="bestMph">—</strong><span>Best MPH</span></div>
+  <div class="metric"><strong id="bestDuration">—</strong><span>Best duration</span></div>
+  <div class="metric"><strong id="avgTemp">—</strong><span>Average temp</span></div>
+ </div>
+</section>
+<section class="card" id="historyCard">
+ <div class="section-head"><h2>Pass history</h2><div class="actions"><button class="secondary small" id="exportCsvBtn">Export CSV</button><button class="secondary small" id="backupBtn">Backup data</button><button class="secondary small" id="restoreBtn">Restore backup</button><input id="restoreFile" class="hidden" type="file" accept=".json,application/json"></div></div>
+ <div class="table-wrap" id="historyTable"></div>
+</section>
+</main>
+<footer>Data is saved in this browser on this device. Use Backup data regularly to keep a copy or move your logbook to another device.</footer>
+<div id="toast" class="toast hidden" role="status"></div>
+<script>
+(() => {
+ const KEY='slotCarLogbook.v1';
+ const fields=[['60 ft','ft60'],['1000 ft','ft1000'],['MPH','mph'],['Start %','start'],['Finish %','finish'],['Duration','duration'],['Temp','temp']];
+ const $=id=>document.getElementById(id);
+ let db=load(), selectedCar=db.cars[0]?.id||null, selectedTrack=null, editingId=null, toastTimer;
+ function uid(){return 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
+ function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.cars))return x}catch(e){}return {cars:[]}}
+ function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.add('hidden'),2400)}
+ function car(){return db.cars.find(c=>c.id===selectedCar)||null}
+ function track(){return car()?.tracks.find(t=>t.id===selectedTrack)||null}
+ function ensureSelection(){if(!car()){selectedCar=null;selectedTrack=null;return}if(!track())selectedTrack=car().tracks[0]?.id||null}
+ function render(){
+  ensureSelection();
+  $('carSelect').innerHTML=db.cars.length?db.cars.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join(''):'<option value="">No cars yet — add a car</option>';
+  $('carSelect').value=selectedCar||'';
+  $('trackSelect').innerHTML=car()?.tracks.length?car().tracks.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join(''):'<option value="">No tracks yet — add a track</option>';
+  $('trackSelect').value=selectedTrack||'';
+  ['renameCarBtn','deleteCarBtn'].forEach(id=>$(id).disabled=!car());
+  ['renameTrackBtn','deleteTrackBtn','addTrackBtn'].forEach(id=>$(id).disabled=!car()||(id!=='addTrackBtn'&&!track()));
+  $('passForm').querySelectorAll('input').forEach(el=>el.disabled=!track());
+  $('savePassBtn').disabled=!track();
+  renderStats();renderHistory();
+ }
+ function val(id){return $(id).value.trim()}
+ function formValues(){return {ft60:val('v60'),ft1000:val('v1000'),mph:val('vmph'),start:val('vstart'),finish:val('vfinish'),duration:val('vduration'),temp:val('vtemp')}}
+ function fillForm(p){$('v60').value=p.ft60||'';$('v1000').value=p.ft1000||'';$('vmph').value=p.mph||'';$('vstart').value=p.start||'';$('vfinish').value=p.finish||'';$('vduration').value=p.duration||'';$('vtemp').value=p.temp||''}
+ function clearForm(){editingId=null;fillForm({});$('formTitle').textContent='Record a pass';$('savePassBtn').textContent='Save pass';$('cancelEditBtn').classList.add('hidden')}
+ function passes(){return track()?.passes||[]}
+ function numeric(p,k){const n=Number(p[k]);return p[k]!==''&&Number.isFinite(n)?n:null}
+ function best(k,lower){const nums=passes().map(p=>numeric(p,k)).filter(n=>n!==null);if(!nums.length)return '—';return (lower?Math.min(...nums):Math.max(...nums)).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')}
+ function renderStats(){
+  const ps=passes();$('passCount').textContent=ps.length;
+  $('best60').textContent=best('ft60',true);$('best1000').textContent=best('ft1000',true);$('bestMph').textContent=best('mph',false);$('bestDuration').textContent=best('duration',true);
+  const temps=ps.map(p=>numeric(p,'temp')).filter(n=>n!==null);$('avgTemp').textContent=temps.length?(temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1):'—';
+ }
+ function renderHistory(){
+  const ps=passes().slice().sort((a,b)=>b.created-a);
+  if(!car()||!track()){ $('historyTable').innerHTML='<div class="empty">Add a car and a track to start recording passes.</div>';return}
+  if(!ps.length){$('historyTable').innerHTML='<div class="empty">No passes logged for '+esc(track().name)+'. Add your first pass above.</div>';return}
+  $('historyTable').innerHTML=`<table><thead><tr><th>Date</th>${fields.map(f=>`<th>${f[0]}</th>`).join('')}<th>Actions</th></tr></thead><tbody>${ps.map(p=>`<tr><td>${esc(new Date(p.created).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}</td>${fields.map(f=>`<td>${esc(p[f[1]]||'—')}${f[1]==='temp'&&p[f[1]]!==''?'°':''}</td>`).join('')}<td><div class="actions"><button class="secondary small" data-edit="${esc(p.id)}">Edit</button><button class="danger small" data-del="${esc(p.id)}">Delete</button></div></td></tr>`).join('')}</tbody></table>`;
+  $('historyTable').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editPass(b.dataset.edit));
+  $('historyTable').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deletePass(b.dataset.del));
+ }
+ function addCar(){const name=prompt('Name this slot car:');if(!name||!name.trim())return;const c={id:uid(),name:name.trim(),tracks:[]};db.cars.push(c);selectedCar=c.id;selectedTrack=null;save();render();toast('Car added')}
+ function addTrack(){if(!car())return;const name=$('newTrack').value.trim();if(!name){toast('Enter a track name first');$('newTrack').focus();return}if(car().tracks.some(t=>t.name.toLowerCase()===name.toLowerCase())){toast('That track already exists for this car');return}const t={id:uid(),name,passes:[]};car().tracks.push(t);selectedTrack=t.id;$('newTrack').value='';save();render();toast('Track added')}
+ function renameCar(){if(!car())return;const name=prompt('Rename car:',car().name);if(name&&name.trim()){car().name=name.trim();save();render()}}
+ function renameTrack(){if(!track())return;const name=prompt('Rename track:',track().name);if(name&&name.trim()){track().name=name.trim();save();render()}}
+ function deleteCar(){if(!car())return;const c=car();if(!confirm(`Delete "${c.name}" and all its tracks and passes? This cannot be undone.`))return;db.cars=db.cars.filter(x=>x.id!==c.id);selectedCar=db.cars[0]?.id||null;selectedTrack=null;clearForm();save();render();toast('Car deleted')}
+ function deleteTrack(){if(!track())return;const t=track();if(!confirm(`Delete "${t.name}" and its ${t.passes.length} passes? This cannot be undone.`))return;car().tracks=car().tracks.filter(x=>x.id!==t.id);selectedTrack=null;clearForm();save();render();toast('Track deleted')}
+ function editPass(id){const p=passes().find(x=>x.id===id);if(!p)return;editingId=id;fillForm(p);$('formTitle').textContent='Edit pass';$('savePassBtn').textContent='Update pass';$('cancelEditBtn').classList.remove('hidden');$('entryCard').scrollIntoView({behavior:'smooth',block:'start'})}
+ function deletePass(id){const p=passes().find(x=>x.id===id);if(!p||!confirm('Delete this pass?'))return;track().passes=passes().filter(x=>x.id!==id);if(editingId===id)clearForm();save();render();toast('Pass deleted')}
+ $('passForm').addEventListener('submit',e=>{e.preventDefault();if(!track())return;const p=formValues();for(const [label,key] of fields){if(p[key]!==''&&!Number.isFinite(Number(p[key]))){toast(label+' must be a number');return}if((key==='start'||key==='finish')&&p[key]!==''&&(Number(p[key])<0||Number(p[key])>100)){toast(label+' must be between 0 and 100');return}}
+  if(editingId){const old=passes().find(x=>x.id===editingId);if(old)Object.assign(old,p);clearForm();toast('Pass updated')}
+  else{track().passes.push({id:uid(),created:Date.now(),...p});fillForm({});toast('Pass saved')}
+  save();render();
+ });
+ $('cancelEditBtn').onclick=clearForm;$('addCarBtn').onclick=addCar;$('addTrackBtn').onclick=addTrack;$('renameCarBtn').onclick=renameCar;$('renameTrackBtn').onclick=renameTrack;$('deleteCarBtn').onclick=deleteCar;$('deleteTrackBtn').onclick=deleteTrack;
+ $('carSelect').onchange=()=>{selectedCar=$('carSelect').value||null;selectedTrack=null;clearForm();render()};
+ $('trackSelect').onchange=()=>{selectedTrack=$('trackSelect').value||null;clearForm();render()};
+ $('newTrack').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTrack()}});
+ function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ $('backupBtn').onclick=()=>download('slot-car-logbook-backup.json',JSON.stringify(db,null,2),'application/json');
+ $('restoreBtn').onclick=()=>$('restoreFile').click();
+ $('restoreFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.cars)||!confirm('Replace this device’s current logbook with the selected backup?'))return;db=x;selectedCar=db.cars[0]?.id||null;selectedTrack=null;clearForm();save();render();toast('Backup restored')}catch(err){alert('Could not read that backup file.')}finally{e.target.value=''}};
+ $('exportCsvBtn').onclick=()=>{if(!car()||!track()){toast('Select a car and track first');return}const header=['Date','Car','Track',...fields.map(f=>f[0])];const rows=passes().slice().sort((a,b)=>a.created-b.created).map(p=>[new Date(p.created).toISOString(),car().name,track().name,...fields.map(f=>p[f[1]])]);const csv=[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download('slot-car-passes.csv',csv,'text/csv;charset=utf-8')};
+ render();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(err => console.warn("Offline setup could not start:", err));
+  });
+}
+</script>
+</body></html>
